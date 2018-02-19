@@ -14,11 +14,19 @@ gitbucket2slack_hook
 
 Create a [new bot](https://my.slack.com/services/new/bot), and note its API token.
 
-###### Set environment variables.
+###### Set environment variable.
 
-    export SLACK_API_TOKEN="xxxx-0000-xxxxxx" (bot API token)
-    export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/xxxx/xxxxxx"
-    export ACCESS_URL_TOKEN=xxxxyyyyzzzz
+    export GB2S_CONFIG_PATH="/path/to/settings.yml"
+
+###### Edit settings.yml
+
+    ex)
+    slack_api_token: xxxx-00000-xxxxxx (bot api token)
+    token2slack:
+      'TOKEN1': 'https://hooks.slack.com/services/aa/bb/cc'
+      'TOKEN2': 'https://hooks.slack.com/services/xx/yy/zz'
+
+
 
 ###### Launch puma server.
 
@@ -26,7 +34,7 @@ Create a [new bot](https://my.slack.com/services/new/bot), and note its API toke
 
 ###### Set gitbucket service hook.
 
-- Payload URL: https&#58;//puma-server/gitbucket2slack_hook/ACCESS_URL_TOKEN
+- Payload URL: https&#58;//puma-server/gitbucket2slack_hook/TOKEN1
 - Content type: application/json
 
 ###### Add gitbucket comment.

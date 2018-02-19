@@ -1,27 +1,27 @@
 require 'bundler'
 Bundler.require
 
+require 'sinatra/config_file'
+
 require 'net/http'
 require 'uri'
 require 'json'
 
 
-if ENV['SLACK_API_TOKEN'].nil? || ENV['SLACK_WEBHOOK_URL'].nil? || ENV['ACCESS_URL_TOKEN'].nil?
- puts 'Please set ENVs. SLACK_API_TOKEN, SLACK_WEBHOOK_URL and ACCESS_URL_TOKEN'
+if ENV['GB2S_CONFIG_PATH'].nil?
+ puts 'Please set ENVs: GB2S_CONFIG_PATH'
  exit 1
 end
 
 
-configure {
+configure do
   set :server, :puma
-}
-
-Slack.configure do |config|
-  config.token = ENV['SLACK_API_TOKEN']
 end
 
 
 class App < Sinatra::Base
+  register Sinatra::ConfigFile
+
   configure :development do
     Bundler.require :development
     register Sinatra::Reloader
@@ -31,7 +31,7 @@ class App < Sinatra::Base
   access_logger = ::Logger.new(File.join(settings.root, 'log', 'access.log'))
   error_logger = File.new(File.join(settings.root, 'log', 'error.log'), 'a+')
   error_logger.sync = true
- 
+
   configure do
     use ::Rack::CommonLogger, access_logger
   end
@@ -45,9 +45,23 @@ class App < Sinatra::Base
   end
 
 
+  config_file ENV['GB2S_CONFIG_PATH']
+
+  Slack.configure do |config|
+    config.token = settings.slack_api_token
+  end
+
+
   # Action ------------------------------------------------------------
 
-  post '/gitbucket2slack_hook/' + ENV['ACCESS_URL_TOKEN']  do
+  post '/gitbucket2slack_hook/:token' do
+    slack_url = settings.token2slack[params[:token]]
+    if slack_url.nil?
+      status 404
+      body ''
+      return
+    end
+
     data_hash = JSON.parse(request.body.read)
 
     # load user id data from local file.
@@ -81,7 +95,7 @@ class App < Sinatra::Base
     end
 
     # resend to slack
-    uri  = URI.parse(ENV['SLACK_WEBHOOK_URL'])
+    uri  = URI.parse(slack_url)
     Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
       request = Net::HTTP::Post.new(uri.path)
       request.set_form_data(payload: data_hash.to_json)
@@ -159,4 +173,3 @@ class App < Sinatra::Base
     }
   end
 end
-
