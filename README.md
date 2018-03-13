@@ -1,5 +1,3 @@
-**\*\*\*\*\* UNDER DEVELOPMENT \*\*\*\*\***
-
 gitbucket2slack_hook
 ====
 
